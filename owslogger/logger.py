@@ -123,9 +123,11 @@ class DSNHandler(logging.Handler):
 
     def emit(self, record):
         """Emit a record.
+
         From the documentation: do whatever it takes to actually log the
         specified logging record. Here: we send it to the provider. The payload
         matches Orchard format.
+
         Args:
             record (LogRecord): the record to log.
         """
@@ -138,6 +140,7 @@ class DSNHandler(logging.Handler):
                 'level': record.levelname,
                 'correlation_id': record.correlation_id,
                 'message': self.get_full_message(record),
+                'resources': getattr(record, 'resources', {}),
                 'service': self.service_name,
                 'service_version': self.service_version,
                 'environment': self.environment,
@@ -152,6 +155,30 @@ class DSNHandler(logging.Handler):
             raise
         except:
             self.handleError(record)
+
+
+class OwsLoggingAdaptor(logging.LoggerAdapter):
+    """Custom class for Adaptors.
+
+    The default adaptor doesn't allow to pass in an extra field on logging,
+    which is used in our case to append labels to messages.
+    """
+
+    def process(self, msg, kwargs):
+        """Process the logging message and keyword arguments passed in.
+
+        The main method just sets the extra fields to be equal to self.extra.
+        So if we need to provide local data as part of the context, we can't
+        (it will be removed as part of the override).
+
+        Args:
+            msg (obj): the log messge.
+        """
+
+        extra = dict(resources=kwargs.pop('resources', {}))
+        extra.update(self.extra)
+        kwargs.update(extra=extra)
+        return msg, kwargs
 
 
 def global_correlation_id(logger):
@@ -205,4 +232,4 @@ def global_logger(logger):
 
     global_correlation_id(logger)
     context = dict(correlation_id=g.correlation_id)
-    g.log = logging.LoggerAdapter(logger, context)
+    g.log = OwsLoggingAdaptor(logger, context)
