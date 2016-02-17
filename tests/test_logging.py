@@ -33,6 +33,7 @@ def test_get_full_message():
     record = Mock()
     message = 'Message'
     record.msg = message
+    record.levelno = 10
     record.exc_info = None
     handler = logger.DSNHandler('dsn', 'qa', 'logging', '1.0.0')
     assert handler.get_full_message(record) == message
@@ -44,6 +45,7 @@ def test_get_full_message_with_exception(trace):
     """
 
     record = Mock()
+    record.levelno = 50
     record.exc_info = ['one', 'two']
     trace.return_value = ['trace', 'two']
     handler = logger.DSNHandler('dsn', 'qa', 'logging', '1.0.0')
@@ -59,6 +61,7 @@ def test_session_post_called_on_message_emit(session):
     record = Mock()
     message = 'Message'
     correlation_id = uuid.uuid1()
+    record.levelno = 10
     record.msg = message
     record.created = datetime.now().timestamp()
     record.exc_info = None
@@ -79,6 +82,7 @@ def test_emit_message_on_post_failure(session):
 
     record = Mock()
     record.msg = 'Message'
+    record.levelno = 10
     record.created = datetime.now().timestamp()
     record.exc_info = None
     record.correlation_id = uuid.uuid1()
@@ -97,6 +101,7 @@ def test_emit_message_with_normal_exception(session):
 
     record = Mock()
     record.msg = 'Message'
+    record.levelno = 10
     record.exc_info = None
     record.correlation_id = uuid.uuid1()
     handler = logger.DSNHandler('dsn', 'qa', 'logging', '1.0.0')
@@ -164,3 +169,23 @@ def test_logger_creation():
         assert isinstance(g.log, logging.LoggerAdapter)
         assert 'correlation_id' in g.log.extra
         assert g.log.extra.get('correlation_id') == g.correlation_id
+
+
+@pytest.mark.parametrize(('level', 'expected'), [
+    (10, ('INFO', 100)),
+    (20, ('DEBUG', 200)),
+    (25, ('NOTICE', 250)),
+    (30, ('WARNING', 300)),
+    (40, ('ERROR', 400)),
+    (50, ('CRITICAL', 500)),
+    (1, ('INFO', 100)),
+    (600, ('CRITICAL', 500))
+])
+def test_get_standard_level_from_record(level, expected):
+    """Test the standardization of the python levels.
+    """
+
+    record = Mock()
+    record.levelno = level
+    response = logger.get_standard_level_from_record(record)
+    assert response == expected

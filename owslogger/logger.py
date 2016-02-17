@@ -20,6 +20,15 @@ import traceback
 import uuid
 
 
+LEVELS = {
+    100: 'INFO',
+    200: 'DEBUG',
+    250: 'NOTICE',
+    300: 'WARNING',
+    400: 'ERROR',
+    500: 'CRITICAL'
+}
+
 session = FuturesSession()
 
 
@@ -133,11 +142,13 @@ class DSNHandler(logging.Handler):
         """
 
         try:
+            level_name, level_number = get_standard_level_from_record(record)
             payload = {
                 'tag': 'ows1',
                 'timestamp': datetime.datetime.fromtimestamp(
                     record.created).isoformat(),
-                'level': record.levelname,
+                'level': level_number,
+                'level_name': level_name,
                 'correlation_id': record.correlation_id,
                 'message': self.get_full_message(record),
                 'resources': getattr(record, 'resources', {}),
@@ -179,6 +190,28 @@ class OwsLoggingAdaptor(logging.LoggerAdapter):
         extra.update(self.extra)
         kwargs.update(extra=extra)
         return msg, kwargs
+
+
+def get_standard_level_from_record(record):
+    """Get standard level from a log record.
+
+    This methods takes the information from the LogRecord and return a two
+    value tuple which contains the level name and level number.
+
+    Args:
+        record (LogRecord): the record of the level.
+
+    Return:
+        tuple: contains the level name (str) and the level number (int).
+    """
+
+    # python levels are in 10 ... 50, we need them in the hundred.
+    value = record.levelno * 10
+    if value < 100:
+        value = 100
+    if value > 500:
+        value = 500
+    return LEVELS.get(value, ''), value
 
 
 def global_correlation_id(logger):
