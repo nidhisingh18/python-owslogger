@@ -2,10 +2,10 @@ from flask import Flask
 import logging
 from flask import g
 
-from owslogger import logger
+from owslogger import flask_logger
 
 app = Flask(__name__)
-logger.setup(
+flask_logger.setup(
     app, 'https://logglyurl', 'dev', 'logger_name', logging.INFO,
     'service_name', '1.0.0')
 

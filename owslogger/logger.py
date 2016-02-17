@@ -8,9 +8,6 @@ specific format (json), which includes fields that are specific to the Orchard,
 such as the service name, the correlation id.
 """
 
-from flask import g
-from flask import request
-from functools import partial
 from requests_futures.sessions import FuturesSession
 import datetime
 import logging
@@ -33,29 +30,36 @@ session = FuturesSession()
 
 
 def setup(
-        app, dsn, environment, logger_name, logger_level, service_name,
-        service_version):
-    """Setup logging for the flask application.
+        dsn, environment, logger_name, logger_level, service_name,
+        service_version, correlation_id=None):
+    """Setup logging.
+
+    If the correlation id is provided, this will create a logger (if not
+    already created) and an adaptor.
 
     Args:
-        app (Flask): the application to add logging to.
         dsn (str): the data source name.
         environment (str): the application's environment.
         logger_name (str): name of the logger.
         logger_level (str): logging level of the logger.
         service_name (str): the service name.
         service_version (str): the service version.
+        correlation_id (int): optional correlation id.
+
+    Return:
+        Logger: the logger
     """
 
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logger_level)
-    configure_handler(logger, dsn, environment, service_name, service_version)
+    current_logger = logging.getLogger(logger_name)
+    current_logger.setLevel(logger_level)
+    configure_handler(
+        current_logger, dsn, environment, service_name, service_version)
 
-    app.global_correlation_id = partial(global_correlation_id, logger)
-    app.global_logger = partial(global_logger, logger)
+    if correlation_id:
+        context = dict(correlation_id=g.correlation_id)
+        return OwsLoggingAdaptor(current_logger, context)
 
-    app.before_request(app.global_correlation_id)
-    app.before_request(app.global_logger)
+    return current_logger
 
 
 def configure_handler(logger, dsn, environment, service_name, service_version):
@@ -212,57 +216,3 @@ def get_standard_level_from_record(record):
     if value > 500:
         value = 500
     return LEVELS.get(value, ''), value
-
-
-def global_correlation_id(logger):
-    """Global correlation id.
-
-    The correlation id is either provided by the request, and if not, it is
-    created by the service and used whenever a call is made to another system.
-    We are using flask.g, since Flask is thread safe.
-
-    Args:
-        logger (Logger): the app logger.
-
-    Return:
-        str: the correlation id.
-    """
-
-    if hasattr(g, 'correlation_id'):
-        return g.correlation_id
-
-    g.correlation_id = request.headers.get('Correlation-Id')
-    if not g.correlation_id:
-        g.correlation_id = str(uuid.uuid1())
-        message = (
-            'Correlation-Id ({id}) created.'.format(id=g.correlation_id))
-    else:
-        message = (
-            'Correlation-Id ({id}) received.'.format(id=g.correlation_id))
-
-    global_logger(logger)
-    g.log.info(message)
-
-
-def global_logger(logger):
-    """Global logger
-
-    The global logger is used everywhere through the application. It formats
-    the logs following our standards and it attaches additional information
-    such as the correlation id.
-
-    Code sample:
-
-        from flask import g
-
-        @app.route('/')
-        def homepage():
-            g.log.info('User has hit the homepage')
-
-    Args:
-        logger (Logger): the application logger.
-    """
-
-    global_correlation_id(logger)
-    context = dict(correlation_id=g.correlation_id)
-    g.log = OwsLoggingAdaptor(logger, context)
