@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     name='owslogger',
     version='0.3.0',
-    url='https://github.com/theorchard/logging/',
+    url='https://github.com/theorchard/python-owslogger/',
     author='The Orchard',
     description=(
         'Logging library.'),
