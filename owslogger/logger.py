@@ -8,13 +8,14 @@ specific format (json), which includes fields that are specific to the Orchard,
 such as the service name, the correlation id.
 """
 
-from requests_futures.sessions import FuturesSession
 import datetime
 import logging
 import logging.handlers
 import socket
 import traceback
 import uuid
+
+from requests_futures.sessions import FuturesSession
 
 
 LEVELS = {
@@ -56,7 +57,7 @@ def setup(
         current_logger, dsn, environment, service_name, service_version)
 
     if correlation_id:
-        context = dict(correlation_id=g.correlation_id)
+        context = dict(correlation_id=correlation_id)
         return OwsLoggingAdaptor(current_logger, context)
 
     return current_logger
@@ -165,7 +166,7 @@ class DSNHandler(logging.Handler):
                     'line': record.lineno
                 }
             }
-            session.post(self.dsn, data=payload, background_callback=callback)
+            session.post(self.dsn, json=payload, background_callback=callback)
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
