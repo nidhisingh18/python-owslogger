@@ -100,4 +100,4 @@ def global_logger(current_logger):
 
     global_correlation_id(current_logger)
     context = dict(correlation_id=g.correlation_id)
-    g.log = logger.OwsLoggingAdaptor(current_logger, context)
+    g.log = logger.OwsLoggingAdapter(current_logger, context)

@@ -32,9 +32,9 @@ app_logger = logger.setup(
     'loggly http/s url', 'environment', 'logger_name', logging.INFO,
     'service_name', '1.0.0')
 
-# Make it specific to a request by creating an adaptor and adding the
+# Make it specific to a request by creating an adapter and adding the
 # correlation id.
-current_app_logger = logger.OwsLoggingAdaptor(app_logger, {
+current_app_logger = logger.OwsLoggingAdapter(app_logger, {
     'correlation_id': 'correlation_id'
 })
 
