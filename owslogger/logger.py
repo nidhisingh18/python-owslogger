@@ -36,7 +36,7 @@ def setup(
     """Setup logging.
 
     If the correlation id is provided, this will create a logger (if not
-    already created) and an adaptor.
+    already created) and an adapter.
 
     Args:
         dsn (str): the data source name.
@@ -58,7 +58,7 @@ def setup(
 
     if correlation_id:
         context = dict(correlation_id=correlation_id)
-        return OwsLoggingAdaptor(current_logger, context)
+        return OwsLoggingAdapter(current_logger, context)
 
     return current_logger
 
@@ -173,10 +173,10 @@ class DSNHandler(logging.Handler):
             self.handleError(record)
 
 
-class OwsLoggingAdaptor(logging.LoggerAdapter):
-    """Custom class for Adaptors.
+class OwsLoggingAdapter(logging.LoggerAdapter):
+    """Custom class for Adapters.
 
-    The default adaptor doesn't allow to pass in an extra field on logging,
+    The default adapter doesn't allow to pass in an extra field on logging,
     which is used in our case to append labels to messages.
     """
 
