@@ -130,13 +130,13 @@ def test_configure_handler_with_dsn():
 
 
 @pytest.mark.parametrize(('level', 'expected'), [
-    (10, ('INFO', 100)),
-    (20, ('DEBUG', 200)),
+    (10, ('DEBUG', 100)),
+    (20, ('INFO', 200)),
     (25, ('NOTICE', 250)),
     (30, ('WARNING', 300)),
     (40, ('ERROR', 400)),
     (50, ('CRITICAL', 500)),
-    (1, ('INFO', 100)),
+    (1, ('DEBUG', 100)),
     (600, ('CRITICAL', 500))
 ])
 def test_get_standard_level_from_record(level, expected):

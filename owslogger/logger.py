@@ -19,8 +19,8 @@ from requests_futures.sessions import FuturesSession
 
 
 LEVELS = {
-    100: 'INFO',
-    200: 'DEBUG',
+    100: 'DEBUG',
+    200: 'INFO',
     250: 'NOTICE',
     300: 'WARNING',
     400: 'ERROR',
