@@ -47,7 +47,7 @@ def setup(
         service_version (str): the service version.
         correlation_id (int): optional correlation id.
 
-    Return:
+    Returns:
         Logger: the logger
     """
 
@@ -107,7 +107,7 @@ class DSNHandler(logging.Handler):
             service_name (str): the service name.
             service_version (str): the service version.
 
-        Return:
+        Returns:
             HTTPSHandler: the created handler.
         """
 
@@ -206,7 +206,7 @@ def get_standard_level_from_record(record):
     Args:
         record (LogRecord): the record of the level.
 
-    Return:
+    Returns:
         tuple: contains the level name (str) and the level number (int).
     """
 
