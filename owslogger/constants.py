@@ -1,1 +1,1 @@
-CORRELATION_ID_HEADER='Correlation-Id'
+CORRELATION_ID_HEADER = 'Correlation-Id'
