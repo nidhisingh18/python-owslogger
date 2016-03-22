@@ -20,6 +20,7 @@ from functools import partial
 import logging
 import uuid
 
+from owslogger import constants
 from owslogger import logger
 
 
@@ -47,6 +48,7 @@ def setup(
 
     app.before_request(app.global_correlation_id)
     app.before_request(app.global_logger)
+    app.after_request(add_correlation_id_to_response)
 
 
 def global_correlation_id(current_logger):
@@ -59,14 +61,14 @@ def global_correlation_id(current_logger):
     Args:
         current_logger (Logger): the app logger.
 
-    Return:
+    Returns:
         str: the correlation id.
     """
 
     if hasattr(g, 'correlation_id'):
         return g.correlation_id
 
-    g.correlation_id = request.headers.get('Correlation-Id')
+    g.correlation_id = request.headers.get(constants.CORRELATION_ID_HEADER)
     if not g.correlation_id:
         g.correlation_id = str(uuid.uuid1())
         message = (
@@ -101,3 +103,18 @@ def global_logger(current_logger):
     global_correlation_id(current_logger)
     context = dict(correlation_id=g.correlation_id)
     g.log = logger.OwsLoggingAdapter(current_logger, context)
+
+
+def add_correlation_id_to_response(response):
+    """Sets correlation id into response header.
+
+    Args:
+        response (Flask.response): response object to hydrate
+
+    Returns:
+        Flask.response: response hydrated with correlation id
+    """
+
+    if response:
+        response.headers[constants.CORRELATION_ID_HEADER] = g.correlation_id
+    return response
