@@ -21,13 +21,33 @@ def test_setting_up_flask_app():
         app, '', 'qa', 'logging', logging.INFO, 'service',  '1.0.0')
 
 
-def test_app_correlation_id_creation():
+def test_setting_up_flask_app_with_excluded_paths(monkeypatch):
+    """Test setting up a flask application.
+    """
+
+    app = Flask(__name__)
+    monkeypatch.setattr(flask_logger, 'global_logger', Mock())
+
+    flask_logger.setup(
+        app, '', 'qa', 'logging', logging.INFO, 'service',  '1.0.0',
+        exclude_paths=['/hello/'])
+
+    with app.test_request_context('/hello/'):
+        g.log = Mock()
+        app.global_correlation_id()
+        assert not g.log.info.called
+
+
+def test_app_correlation_id_creation(monkeypatch):
     """Test creation of the correlation id.
     """
 
+    monkeypatch.setattr(flask_logger, 'global_logger', Mock())
     with app.test_request_context('/hello/'):
+        g.log = Mock()
         app.global_correlation_id()
         assert g.correlation_id
+        assert g.log.info.called
 
 
 def test_app_correlation_id_reuse():

@@ -25,7 +25,7 @@ from owslogger import logger
 
 def setup(
         app, dsn, environment, logger_name, logger_level, service_name,
-        service_version):
+        service_version, exclude_paths=None):
     """Setup logging for the flask application.
 
     Args:
@@ -36,20 +36,22 @@ def setup(
         logger_level (str): logging level of the logger.
         service_name (str): the service name.
         service_version (str): the service version.
+        exclude_paths (list): optional list of paths to exclude.
     """
 
     current_logger = logger.setup(
         dsn, environment, logger_name, logger_level, service_name,
         service_version)
 
-    app.global_correlation_id = partial(global_correlation_id, current_logger)
+    app.global_correlation_id = partial(
+        global_correlation_id, current_logger, exclude_paths=exclude_paths)
     app.global_logger = partial(global_logger, current_logger)
 
     app.before_request(app.global_correlation_id)
     app.before_request(app.global_logger)
 
 
-def global_correlation_id(current_logger):
+def global_correlation_id(current_logger, exclude_paths=None):
     """Global correlation id.
 
     The correlation id is either provided by the request, and if not, it is
@@ -58,10 +60,13 @@ def global_correlation_id(current_logger):
 
     Args:
         current_logger (Logger): the app logger.
+        exclude_paths (list): list of paths to exclude.
 
     Return:
         str: the correlation id.
     """
+
+    exclude_paths = exclude_paths or []
 
     if hasattr(g, 'correlation_id'):
         return g.correlation_id
@@ -76,7 +81,9 @@ def global_correlation_id(current_logger):
             'Correlation-Id ({id}) received.'.format(id=g.correlation_id))
 
     global_logger(current_logger)
-    g.log.info(message)
+
+    if not request.path in exclude_paths:
+        g.log.info(message)
 
 
 def global_logger(current_logger):
