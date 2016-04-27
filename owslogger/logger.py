@@ -148,10 +148,15 @@ class DSNHandler(logging.Handler):
 
         try:
             level_name, level_number = get_standard_level_from_record(record)
+
+            # Calculate the timestamp.
+            local_date = datetime.datetime.fromtimestamp(record.created)
+            utc_delta = datetime.datetime.utcnow() - datetime.datetime.now()
+            utc_date = local_date + utc_delta
+
             payload = {
                 'tag': 'ows1',
-                'timestamp': datetime.datetime.fromtimestamp(
-                    record.created).isoformat(),
+                'timestamp': utc_date.isoformat(),
                 'level': level_number,
                 'level_name': level_name,
                 'correlation_id': record.correlation_id,
