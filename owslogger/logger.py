@@ -11,9 +11,7 @@ such as the service name, the correlation id.
 import datetime
 import logging
 import logging.handlers
-import socket
 import traceback
-import uuid
 
 from requests_futures.sessions import FuturesSession
 
@@ -45,7 +43,7 @@ def setup(
         logger_level (str): logging level of the logger.
         service_name (str): the service name.
         service_version (str): the service version.
-        correlation_id (int): optional correlation id.
+        correlation_id (str or int): optional correlation id.
 
     Returns:
         Logger: the logger
@@ -97,6 +95,11 @@ def callback(session, resp):
 
 
 class DSNHandler(logging.Handler):
+    """Custom DSN handler.
+
+    Custom DSN handler that sends a JSON payload complying with OWS1
+    standard.
+    """
 
     def __init__(self, dsn, environment, service_name, service_version):
         """Constructor of HTTPSHandler.
@@ -159,7 +162,7 @@ class DSNHandler(logging.Handler):
                 'timestamp': utc_date.isoformat(),
                 'level': level_number,
                 'level_name': level_name,
-                'correlation_id': record.correlation_id,
+                'correlation_id': str(record.correlation_id),
                 'message': self.get_full_message(record),
                 'resources': getattr(record, 'resources', {}),
                 'service': self.service_name,
@@ -171,6 +174,7 @@ class DSNHandler(logging.Handler):
                     'line': record.lineno
                 }
             }
+
             session.post(self.dsn, json=payload, background_callback=callback)
         except (KeyboardInterrupt, SystemExit):
             raise
